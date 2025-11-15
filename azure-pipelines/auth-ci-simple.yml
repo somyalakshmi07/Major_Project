@@ -1,6 +1,6 @@
-# CI Pipeline for Auth Service
+# CI Pipeline for Auth Service (Simplified - No Variable Groups Required)
 # Purpose: Build, test, and push Docker image to ACR
-# Triggers: On push to main branch
+# Use this version if variable groups are not set up yet
 
 trigger:
   branches:
@@ -14,21 +14,15 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  # Variable groups (optional - uncomment after creating them in Pipelines -> Library)
-  # - group: devops-vars  # Contains: acrName, resourceGroup
-  # - group: secrets-vars  # Contains: Key Vault references
-  
-  # Pipeline variables (update these with your actual values)
+  # UPDATE THESE VALUES with your actual resource names
   - name: serviceName
     value: 'auth-service'
+  - name: acrName
+    value: '<YOUR_ACR_NAME>'  # e.g., 'ecomacr12345'
   - name: dockerfilePath
     value: 'auth-service/Dockerfile'
   - name: imageTag
     value: '$(Build.BuildId)'
-  - name: acrName
-    value: '$(ACR_NAME)'  # Set in pipeline variables or replace with actual ACR name
-  - name: resourceGroup
-    value: '$(RESOURCE_GROUP)'  # Set in pipeline variables or replace with actual RG name
 
 stages:
 - stage: Build
@@ -47,14 +41,14 @@ stages:
       displayName: 'Restore NuGet packages'
       inputs:
         command: 'restore'
-        projects: '**/*.csproj'  # Will find all .csproj files
+        projects: '**/*.csproj'
       continueOnError: true
     
     - task: DotNetCoreCLI@2
       displayName: 'Build solution'
       inputs:
         command: 'build'
-        projects: '**/*.csproj'  # Will find all .csproj files
+        projects: '**/*.csproj'
         arguments: '--configuration Release --no-restore'
       continueOnError: true
     
@@ -62,23 +56,9 @@ stages:
       displayName: 'Run unit tests'
       inputs:
         command: 'test'
-        projects: '**/*Tests.csproj'  # Will find test projects
+        projects: '**/*.csproj'
         arguments: '--configuration Release --no-build --collect:"XPlat Code Coverage"'
       continueOnError: true
-    
-    - task: PublishTestResults@2
-      displayName: 'Publish test results'
-      condition: always()
-      inputs:
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/*.trx'
-    
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish code coverage'
-      condition: always()
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '**/coverage.cobertura.xml'
 
 - stage: Docker
   displayName: 'Build and Push Docker Image'
@@ -92,7 +72,7 @@ stages:
       displayName: 'Login to ACR'
       inputs:
         command: 'login'
-        containerRegistry: 'ACR-Connection'  # Service connection name
+        containerRegistry: 'ACR-Connection'  # Create this service connection first
     
     - task: Docker@2
       displayName: 'Build Docker image'
@@ -114,11 +94,4 @@ stages:
         tags: |
           $(imageTag)
           latest
-    
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish image metadata'
-      inputs:
-        targetPath: '$(Pipeline.Workspace)'
-        artifact: '$(serviceName)-image-$(imageTag)'
-        publishLocation: 'pipeline'
 
