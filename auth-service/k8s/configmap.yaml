@@ -1,0 +1,17 @@
+# ConfigMap for Auth Service
+# Purpose: Stores non-sensitive configuration
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: production
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:80"
+  Jwt__Issuer: "ECommerceMicroservices"
+  Jwt__Audience: "ECommerceMicroservices"
+  Jwt__ExpiryMinutes: "60"
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft: "Warning"
+

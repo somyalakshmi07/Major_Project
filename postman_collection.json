@@ -1,0 +1,292 @@
+{
+  "info": {
+    "name": "E-Commerce Microservices API",
+    "description": "Complete API collection for e-commerce microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authService",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "catalogService",
+      "value": "http://localhost:5002",
+      "type": "string"
+    },
+    {
+      "key": "cartService",
+      "value": "http://localhost:5003",
+      "type": "string"
+    },
+    {
+      "key": "orderService",
+      "value": "http://localhost:5004",
+      "type": "string"
+    },
+    {
+      "key": "paymentService",
+      "value": "http://localhost:5005",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{authService}}/api/auth/register",
+              "host": ["{{authService}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{authService}}/api/auth/login",
+              "host": ["{{authService}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"}
+            ],
+            "url": {
+              "raw": "{{authService}}/api/auth/me",
+              "host": ["{{authService}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog Service",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogService}}/api/products",
+              "host": ["{{catalogService}}"],
+              "path": ["api", "products"]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogService}}/api/products/{id}",
+              "host": ["{{catalogService}}"],
+              "path": ["api", "products", "{id}"],
+              "variable": [{"key": "id", "value": ""}]
+            }
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogService}}/api/products/search?term=laptop",
+              "host": ["{{catalogService}}"],
+              "path": ["api", "products", "search"],
+              "query": [{"key": "term", "value": "laptop"}]
+            }
+          }
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogService}}/api/categories",
+              "host": ["{{catalogService}}"],
+              "path": ["api", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Create Product (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Product\",\n  \"description\": \"Product description\",\n  \"price\": 99.99,\n  \"stock\": 100,\n  \"categoryId\": \"category-id\",\n  \"imageUrl\": \"https://via.placeholder.com/300\"\n}"
+            },
+            "url": {
+              "raw": "{{catalogService}}/api/products",
+              "host": ["{{catalogService}}"],
+              "path": ["api", "products"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart Service",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"}
+            ],
+            "url": {
+              "raw": "{{cartService}}/api/cart",
+              "host": ["{{cartService}}"],
+              "path": ["api", "cart"]
+            }
+          }
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"product-id\",\n  \"productName\": \"Product Name\",\n  \"price\": 99.99,\n  \"quantity\": 1,\n  \"imageUrl\": \"https://via.placeholder.com/300\"\n}"
+            },
+            "url": {
+              "raw": "{{cartService}}/api/cart/items",
+              "host": ["{{cartService}}"],
+              "path": ["api", "cart", "items"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"}
+            ],
+            "url": {
+              "raw": "{{cartService}}/api/cart/clear",
+              "host": ["{{cartService}}"],
+              "path": ["api", "cart", "clear"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "Get Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"}
+            ],
+            "url": {
+              "raw": "{{orderService}}/api/orders",
+              "host": ["{{orderService}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"product-id\",\n      \"productName\": \"Product Name\",\n      \"price\": 99.99,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{orderService}}/api/orders",
+              "host": ["{{orderService}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service",
+      "item": [
+        {
+          "name": "Process Payment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order-id\",\n  \"amount\": 99.99,\n  \"paymentMethod\": \"credit-card\"\n}"
+            },
+            "url": {
+              "raw": "{{paymentService}}/api/payments/process",
+              "host": ["{{paymentService}}"],
+              "path": ["api", "payments", "process"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

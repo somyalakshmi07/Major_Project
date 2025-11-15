@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  labels:
+    app: cart-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+      - name: cart-service
+        image: <ACR_NAME>.azurecr.io/cart-service:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__MongoDB
+          valueFrom:
+            configMapKeyRef:
+              name: cart-service-config
+              key: mongo-connection
+        - name: ConnectionStrings__Redis
+          valueFrom:
+            configMapKeyRef:
+              name: cart-service-config
+              key: redis-connection
+        - name: MongoDB__DatabaseName
+          value: "CartDb"
+        - name: Jwt__SecretKey
+          valueFrom:
+            secretKeyRef:
+              name: cart-service-secrets
+              key: jwt-secret-key
+        - name: Jwt__Issuer
+          value: "ECommerceMicroservices"
+        - name: Jwt__Audience
+          value: "ECommerceMicroservices"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+spec:
+  selector:
+    app: cart-service
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+

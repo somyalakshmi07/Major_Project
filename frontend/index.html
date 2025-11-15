@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Microservices</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">E-Commerce</h1>
+            <div id="nav-links" class="nav-links">
+                <a href="#" onclick="loadPage('home')">Home</a>
+                <a href="#" onclick="loadPage('cart')">Cart (<span id="cart-count">0</span>)</a>
+                <a href="#" onclick="loadPage('orders')">Orders</a>
+                <a href="#" id="auth-link" onclick="loadPage('login')">Login</a>
+                <a href="#" id="admin-link" onclick="loadPage('admin')" style="display:none;">Admin</a>
+                <a href="#" id="logout-link" onclick="logout()" style="display:none;">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <!-- Content will be loaded here -->
+    </main>
+
+    <script src="services/api.js"></script>
+    <script src="services/auth.js"></script>
+    <script src="utils/router.js"></script>
+    <script src="pages/home.js"></script>
+    <script src="pages/login.js"></script>
+    <script src="pages/register.js"></script>
+    <script src="pages/product-details.js"></script>
+    <script src="pages/cart.js"></script>
+    <script src="pages/checkout.js"></script>
+    <script src="pages/payment.js"></script>
+    <script src="pages/orders.js"></script>
+    <script src="pages/admin.js"></script>
+    <script src="pages/admin-products.js"></script>
+    <script src="pages/admin-orders.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+

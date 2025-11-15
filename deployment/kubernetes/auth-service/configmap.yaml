@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+data:
+  postgres-connection: "Host=postgres-service;Port=5432;Database=AuthDb;Username=postgres;Password=postgres"
+

@@ -1,0 +1,20 @@
+# Kubernetes Service for Auth Service
+# Purpose: Exposes Auth Service within cluster
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: production
+  labels:
+    app: auth-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: auth-service
+

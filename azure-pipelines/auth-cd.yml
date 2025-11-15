@@ -1,0 +1,117 @@
+# CD Pipeline for Auth Service
+# Purpose: Deploy to AKS using Helm charts
+# Manual trigger or triggered by CI completion
+
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: devops-vars
+  - group: secrets-vars
+  - name: serviceName
+    value: 'auth-service'
+  - name: namespace
+    value: 'production'
+  - name: imageTag
+    value: '$(Build.BuildId)'  # Set manually or from CI artifact
+
+stages:
+- stage: DeployStaging
+  displayName: 'Deploy to Staging'
+  jobs:
+  - deployment: DeployStagingJob
+    displayName: 'Deploy to Staging Namespace'
+    environment: 'staging'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: 'Set kubectl context'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'  # Service connection name
+              namespace: 'staging'
+          
+          - task: HelmDeploy@0
+            displayName: 'Deploy with Helm'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'
+              namespace: 'staging'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: 'auth-service/helm/auth-service'
+              releaseName: '$(serviceName)'
+              valueFile: 'auth-service/helm/auth-service/values-staging.yaml'
+              arguments: '--set image.tag=$(imageTag) --wait --timeout 5m'
+          
+          - task: Kubernetes@1
+            displayName: 'Verify deployment'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'
+              namespace: 'staging'
+              command: 'get'
+              arguments: 'pods -l app=$(serviceName)'
+
+- stage: DeployProduction
+  displayName: 'Deploy to Production'
+  dependsOn: DeployStaging
+  condition: succeeded()
+  jobs:
+  - deployment: DeployProductionJob
+    displayName: 'Deploy to Production'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: 'Set kubectl context'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'
+              namespace: '$(namespace)'
+          
+          - task: HelmDeploy@0
+            displayName: 'Deploy with Helm'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'
+              namespace: '$(namespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: 'auth-service/helm/auth-service'
+              releaseName: '$(serviceName)'
+              valueFile: 'auth-service/helm/auth-service/values-production.yaml'
+              arguments: '--set image.tag=$(imageTag) --wait --timeout 5m'
+          
+          - task: Kubernetes@1
+            displayName: 'Verify deployment'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'AKS-Connection'
+              namespace: '$(namespace)'
+              command: 'get'
+              arguments: 'pods -l app=$(serviceName)'
+
+- stage: Rollback
+  displayName: 'Rollback on Failure'
+  condition: failed()
+  jobs:
+  - job: RollbackJob
+    displayName: 'Rollback Deployment'
+    steps:
+    - task: HelmDeploy@0
+      displayName: 'Rollback Helm release'
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: 'AKS-Connection'
+        namespace: '$(namespace)'
+        command: 'rollback'
+        releaseName: '$(serviceName)'
+        arguments: '--wait'
+

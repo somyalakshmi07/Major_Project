@@ -1,0 +1,132 @@
+# E-Commerce Microservices Demo Script
+# Purpose: Step-by-step guide for demonstrating the application in viva/presentation
+
+## Pre-Demo Setup (2 minutes)
+1. Open browser to deployed frontend URL
+2. Open Azure Portal → Application Insights
+3. Open Azure DevOps → Pipelines (show recent builds)
+4. Open terminal with kubectl access
+
+---
+
+## Demo Flow (10-12 minutes)
+
+### 1. Architecture Overview (1 min)
+- "This is a production-grade e-commerce platform built with microservices architecture"
+- Show Azure Portal → Resource Group
+- "We have 5 microservices: Auth, Catalog, Cart, Order, Payment"
+- "Deployed on Azure Kubernetes Service with full CI/CD"
+
+### 2. Show Infrastructure (1 min)
+- Azure Portal → AKS Cluster
+  - "AKS cluster with 2 nodes, optimized for student subscription"
+  - Show node pool configuration
+- Azure Portal → Container Registry
+  - "All Docker images stored in ACR"
+  - Show repositories
+- Azure Portal → Key Vault
+  - "Secrets managed securely in Key Vault"
+  - Show secret references
+
+### 3. Show CI/CD Pipeline (2 min)
+- Azure DevOps → Pipelines
+  - "CI pipeline triggers on code push"
+  - Show recent build: "Builds .NET, runs tests, creates Docker image, pushes to ACR"
+  - Show build logs (highlight test execution)
+  - "CD pipeline deploys to AKS using Helm charts"
+  - Show deployment status
+
+### 4. Application Demo - User Flow (4 min)
+
+#### 4.1 Login
+- Navigate to frontend
+- Click "Login"
+- Enter: admin@example.com / Admin123!
+- "JWT token stored in localStorage, sent with each API request"
+
+#### 4.2 Browse Products
+- Show product catalog
+- "Products loaded from Catalog Service (MongoDB)"
+- Search for a product
+- "Search uses Catalog Service API"
+
+#### 4.3 Add to Cart
+- Click "Add to Cart" on a product
+- "Cart Service (Redis + MongoDB) stores items"
+- Show cart icon with count
+- View cart page
+- "Cart persisted per user, cached in Redis"
+
+#### 4.4 Checkout
+- Click "Checkout"
+- "Order Service creates order in SQL Server"
+- Show order confirmation
+- "Payment Service processes payment (simulated)"
+- Show payment success message
+
+#### 4.5 View Orders
+- Navigate to "Orders"
+- "Shows user's orders from Order Service"
+- Show order details
+
+### 5. Admin Panel (1 min)
+- Navigate to "Admin"
+- "Admin role required (RBAC)"
+- Show product management
+- "Can create/update products via Catalog Service API"
+- Show order management
+- "Admin can view all orders"
+
+### 6. Monitoring & Observability (2 min)
+- Azure Portal → Application Insights
+  - "Real-time telemetry from all services"
+  - Show Live Metrics
+  - "Request rates, response times, dependencies"
+- Show Log Analytics queries
+  - "Query logs from all services"
+  - Example: Failed requests in last hour
+- Show Alerts
+  - "Configured alerts for errors, high CPU"
+  - Show budget alert
+
+### 7. Security & Best Practices (1 min)
+- "JWT authentication with IdentityServer"
+- "Secrets in Key Vault, accessed via Managed Identity"
+- "HTTPS enforced, TLS 1.2+"
+- "RBAC for admin endpoints"
+- "CORS configured for frontend"
+
+### 8. Cost Management (30 sec)
+- Azure Portal → Cost Management
+  - "Budget alert set at $30/month"
+  - "Using cost-optimized VM sizes (Standard_B2s)"
+  - "Estimated monthly cost: $50-80 with student discounts"
+
+---
+
+## Key Points to Emphasize
+
+1. **Production-Ready**: Full CI/CD, monitoring, security
+2. **Scalable**: Microservices architecture, can scale independently
+3. **Cost-Optimized**: Student subscription friendly
+4. **Secure**: Key Vault, Managed Identity, RBAC
+5. **Observable**: Application Insights, Log Analytics, Alerts
+6. **Infrastructure as Code**: Bicep templates for reproducibility
+
+---
+
+## Troubleshooting Tips
+
+- If frontend doesn't load: Check ingress controller
+- If authentication fails: Verify Key Vault secrets
+- If pods not running: Check kubectl get pods -A
+- If pipeline fails: Check service connections in Azure DevOps
+
+---
+
+## Closing (30 sec)
+- "This demonstrates a complete production deployment"
+- "All code, infrastructure, and pipelines are version-controlled"
+- "Can be deployed to any Azure subscription with minimal changes"
+- "Ready for production use with proper security hardening"
+

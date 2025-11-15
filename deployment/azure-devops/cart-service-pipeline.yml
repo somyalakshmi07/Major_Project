@@ -1,0 +1,126 @@
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - services/CartService/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  acrName: '<ACR_NAME>.azurecr.io'
+  serviceName: 'cart-service'
+  dockerfilePath: '$(Build.SourcesDirectory)/deployment/docker/cart-service.Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+  - job: Build
+    displayName: 'Build .NET Service'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore Dependencies'
+      inputs:
+        command: 'restore'
+        projects: 'services/CartService/**/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: 'services/CartService/**/*.csproj'
+        arguments: '--configuration Release'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        projects: 'services/CartService/**/*Tests/*.csproj'
+        arguments: '--configuration Release --no-build --collect:"XPlat Code Coverage"'
+      continueOnError: true
+
+- stage: Docker
+  displayName: 'Build and Push Docker Image'
+  dependsOn: Build
+  jobs:
+  - job: Docker
+    displayName: 'Docker Build and Push'
+    steps:
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        command: 'build'
+        repository: '$(serviceName)'
+        dockerfile: '$(dockerfilePath)'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        tags: |
+          $(tag)
+          latest
+    
+    - task: Docker@2
+      displayName: 'Push Docker Image'
+      inputs:
+        command: 'push'
+        repository: '$(serviceName)'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        tags: |
+          $(tag)
+          latest
+
+- stage: Deploy
+  displayName: 'Deploy to AKS'
+  dependsOn: Docker
+  jobs:
+  - deployment: DeployAKS
+    displayName: 'Deploy to AKS'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Kubernetes@1
+            displayName: 'Deploy to Kubernetes'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+              namespace: 'default'
+              command: 'apply'
+              arguments: '-f deployment/kubernetes/cart-service/'
+              
+          - task: Kubernetes@1
+            displayName: 'Set Image'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+              namespace: 'default'
+              command: 'set'
+              arguments: 'image deployment/cart-service cart-service=$(acrName)/$(serviceName):$(tag)'
+
+- stage: Rollback
+  displayName: 'Rollback (On Failure)'
+  dependsOn: Deploy
+  condition: failed()
+  jobs:
+  - job: Rollback
+    displayName: 'Rollback Deployment'
+    steps:
+    - task: Kubernetes@1
+      displayName: 'Rollback Deployment'
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+        namespace: 'default'
+        command: 'rollout'
+        arguments: 'undo deployment/cart-service'
+

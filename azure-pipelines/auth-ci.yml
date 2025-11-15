@@ -1,0 +1,114 @@
+# CI Pipeline for Auth Service
+# Purpose: Build, test, and push Docker image to ACR
+# Triggers: On push to main branch
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - auth-service/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: devops-vars  # Contains: acrName, resourceGroup
+  - group: secrets-vars  # Contains: Key Vault references
+  - name: serviceName
+    value: 'auth-service'
+  - name: dockerfilePath
+    value: 'auth-service/Dockerfile'
+  - name: imageTag
+    value: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build .NET Application'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8.0 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        projects: 'auth-service/src/**/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: 'auth-service/src/**/*.csproj'
+        arguments: '--configuration Release --no-restore'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run unit tests'
+      inputs:
+        command: 'test'
+        projects: 'auth-service/tests/**/*.csproj'
+        arguments: '--configuration Release --no-build --collect:"XPlat Code Coverage"'
+      continueOnError: true
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+    
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish code coverage'
+      condition: always()
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '**/coverage.cobertura.xml'
+
+- stage: Docker
+  displayName: 'Build and Push Docker Image'
+  dependsOn: Build
+  jobs:
+  - job: DockerJob
+    displayName: 'Docker Build and Push'
+    steps:
+    - task: Docker@2
+      displayName: 'Login to ACR'
+      inputs:
+        command: 'login'
+        containerRegistry: 'ACR-Connection'  # Service connection name
+    
+    - task: Docker@2
+      displayName: 'Build Docker image'
+      inputs:
+        command: 'build'
+        repository: '$(serviceName)'
+        dockerfile: '$(dockerfilePath)'
+        containerRegistry: 'ACR-Connection'
+        tags: |
+          $(imageTag)
+          latest
+    
+    - task: Docker@2
+      displayName: 'Push Docker image'
+      inputs:
+        command: 'push'
+        repository: '$(serviceName)'
+        containerRegistry: 'ACR-Connection'
+        tags: |
+          $(imageTag)
+          latest
+    
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish image metadata'
+      inputs:
+        targetPath: '$(Pipeline.Workspace)'
+        artifact: '$(serviceName)-image-$(imageTag)'
+        publishLocation: 'pipeline'
+
