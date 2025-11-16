@@ -8,14 +8,21 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  - group: devops-vars
-  - group: secrets-vars
+  # Variable groups (optional - uncomment if you create them in Pipelines -> Library)
+  # - group: devops-vars
+  # - group: secrets-vars
+
+  # Pipeline variables (update with your actual values)
   - name: serviceName
     value: 'auth-service'
   - name: namespace
     value: 'production'
   - name: imageTag
     value: '$(Build.BuildId)'  # Set manually or from CI artifact
+  - name: acrName
+    value: 'ecomac123'
+  - name: resourceGroup
+    value: 'res123'
 
 stages:
 - stage: DeployStaging
