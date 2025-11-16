@@ -18,7 +18,7 @@ variables:
   # - group: devops-vars  # Contains: acrName, resourceGroup
   # - group: secrets-vars  # Contains: Key Vault references
   
-  # Pipeline variables (update these with your actual values)
+  # Pipeline variables (updated with your actual values)
   - name: serviceName
     value: 'auth-service'
   - name: dockerfilePath
@@ -26,9 +26,9 @@ variables:
   - name: imageTag
     value: '$(Build.BuildId)'
   - name: acrName
-    value: '$(ACR_NAME)'  # Set in pipeline variables or replace with actual ACR name
+    value: 'ecomac123'   # Your ACR name
   - name: resourceGroup
-    value: '$(RESOURCE_GROUP)'  # Set in pipeline variables or replace with actual RG name
+    value: 'res123'      # Your resource group name
 
 stages:
 - stage: Build
